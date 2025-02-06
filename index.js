@@ -46,6 +46,10 @@ const scrapeInstagram = async (profileUrl) => {
   }
 };
 
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+})
+
 app.post("/scrape", async (req, res) => {
   const { profile } = req.body;
   if (!profile) {

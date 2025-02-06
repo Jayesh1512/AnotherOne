@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { chromium } from "playwright-chromium";
+import { chromium as playwrightChromium } from "playwright-chromium";
+import chromium from "@sparticuz/chromium"; // Lambda-compatible Chromium
 import fs from "fs";
 
 const app = express();
@@ -11,14 +12,14 @@ app.use(cors());
 app.use(express.json());
 
 const scrapeInstagram = async (profileUrl) => {
-  const browser = await chromium.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/bin/chromium-browser",
-    headless: true,
+  const browser = await playwrightChromium.launch({
+    args: chromium.args, // Required for Vercel
+    executablePath: await chromium.executablePath(playwrightChromium), // Correct Chromium path
+    headless: chromium.headless, // Ensure headless mode is optimized
   });
 
   const context = await browser.newContext();
-
+  
   try {
     if (fs.existsSync(cookiesFilePath)) {
       const cookies = JSON.parse(fs.readFileSync(cookiesFilePath, "utf8"));
@@ -31,7 +32,6 @@ const scrapeInstagram = async (profileUrl) => {
     const page = await context.newPage();
     console.log(`🌍 Redirecting to profile: ${profileUrl}`);
     await page.goto(profileUrl);
-
     await page.waitForTimeout(5000);
     await page.waitForSelector("body");
 
@@ -61,5 +61,5 @@ app.post("/scrape", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on Port${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

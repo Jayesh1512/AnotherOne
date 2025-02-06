@@ -1,21 +1,29 @@
 {
     "version": 2,
     "builds": [
-        {
-            "src": "index.js",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": [
-                    "node_modules/puppeteer-extra/**",
-                    "node_modules/puppeteer-extra-plugin-stealth/**"
-                ]
-            }
+      {
+        "src": "index.js",
+        "use": "@vercel/node",
+        "config": {
+          "includeFiles": [
+            "node_modules/playwright-core/**",
+            "node_modules/playwright-chromium/**"
+          ]
         }
+      }
     ],
+    "functions": {
+      "api/*": {
+        "runtime": "nodejs18.x",
+        "memory": 1024
+      }
+    },
     "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "index.js"
-        }
-    ]
-}
+      {
+        "src": "/(.*)",
+        "dest": "index.js"
+      }
+    ],
+    "regions": ["iad1", "sfo1", "fra1"]
+  }
+  

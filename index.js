@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { chromium } from "playwright";
+import { chromium } from "playwright-chromium";
 import fs from "fs";
 
 const app = express();
@@ -11,11 +11,15 @@ app.use(cors());
 app.use(express.json());
 
 const scrapeInstagram = async (profileUrl) => {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || "/usr/bin/chromium-browser",
+    headless: true,
+  });
+
   const context = await browser.newContext();
 
   try {
-    // Load saved cookies (skip login)
     if (fs.existsSync(cookiesFilePath)) {
       const cookies = JSON.parse(fs.readFileSync(cookiesFilePath, "utf8"));
       await context.addCookies(cookies);
@@ -25,18 +29,12 @@ const scrapeInstagram = async (profileUrl) => {
     }
 
     const page = await context.newPage();
-    
-    // Navigate directly to profile URL
     console.log(`🌍 Redirecting to profile: ${profileUrl}`);
     await page.goto(profileUrl);
 
-    // Wait for 5 seconds before proceeding
     await page.waitForTimeout(5000);
-
-    // Ensure the profile page is fully loaded
     await page.waitForSelector("body");
 
-    // Extract follower/following counts
     const followers = await page.textContent("a[href$='/followers/'] > span") || "Not Found";
     const following = await page.textContent("a[href$='/following/'] > span") || "Not Found";
 
@@ -47,10 +45,6 @@ const scrapeInstagram = async (profileUrl) => {
     throw new Error("Scraping failed: " + error.message);
   }
 };
-
-app.get('/scrape', (req, res) => {
-  res.json({ message: "Instagram Scraper is running!" });
-});
 
 app.post("/scrape", async (req, res) => {
   const { profile } = req.body;
